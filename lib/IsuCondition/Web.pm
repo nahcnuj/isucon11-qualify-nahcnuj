@@ -727,50 +727,37 @@ sub calculate_condition_level($condition) {
 # GET /api/trend
 # ISUの性格毎の最新のコンディション情報
 sub get_trend($self, $c) {
-    my $character_list = $self->dbh->select_all(
-        "SELECT `character` FROM `isu` GROUP BY `character`");
+    my $character_trend = {};   # { character => { info => [], warning => [], critical => [] } }
+
+    my $rows = $self->dbh->select_all(q{
+            SELECT isu.id AS `id`,isu.character AS `character`,t1.jia_isu_uuid AS `jia_isu_uuid`,`condition`,`timestamp` FROM `isu_condition` AS t1
+            JOIN (
+                SELECT max(`id`) as `id` FROM `isu_condition` GROUP BY `jia_isu_uuid`
+            ) AS t2
+            ON t1.id = t2.id
+            LEFT JOIN `isu` ON isu.jia_isu_uuid = t1.jia_isu_uuid
+            ORDER BY `timestamp` DESC
+        });
+    for my $row ($rows->@*) {
+        my ($condition_level, $e) = calculate_condition_level($row->{condition});
+        if ($e) {
+            warnf($e);
+            $c->halt_no_content(HTTP_INTERNAL_SERVER_ERROR);
+        }
+        my $trend_condition = {
+            isu_id    => $row->{id},
+            timestamp => unix_from_mysql_datetime($row->{timestamp}),
+        };
+        push $character_trend->{$row->{character}}->{$condition_level}->@* => $trend_condition;
+    }
 
     my $trend_response = [];
-    for my $character ($character_list->@*) {
-        my $isu_list = $self->dbh->select_all(
-            "SELECT `id`,`jia_isu_uuid` FROM `isu` WHERE `character` = ?",
-            $character->{character},
-        );
-
-        my $character_isu_conditions = {};
-
-        for my $isu ($isu_list->@*) {
-            my $conditions = $self->dbh->select_all(
-                "SELECT `condition`,`timestamp` FROM `isu_condition` WHERE `jia_isu_uuid` = ? ORDER BY timestamp DESC LIMIT 1",
-                $isu->{jia_isu_uuid},
-            );
-
-            if ($conditions->@* > 0) {
-                my $isu_last_condition = $conditions->[0];
-                my ($condition_level, $e) = calculate_condition_level($isu_last_condition->{condition});
-                if ($e) {
-                    warnf($e);
-                    $c->halt_no_content(HTTP_INTERNAL_SERVER_ERROR);
-                }
-                my $trend_condition = {
-                    isu_id    => $isu->{id},
-                    timestamp => unix_from_mysql_datetime($isu_last_condition->{timestamp}),
-                };
-                push $character_isu_conditions->{$condition_level}->@* => $trend_condition;
-            }
-        }
-
-        for my $level (keys $character_isu_conditions->%*) {
-            my $conditions = $character_isu_conditions->{$level};
-            my @sorted_conditions = sort { $b->{timestamp} <=> $a->{timestamp} } $conditions->@*;
-            $character_isu_conditions->{$level} = \@sorted_conditions;
-        }
-
-        push $trend_response->@* => {
-            character => $character->{character},
-            info      => $character_isu_conditions->{info}     // [],
-            warning   => $character_isu_conditions->{warning}  // [],
-            critical  => $character_isu_conditions->{critical} // [],
+    for $character (keys $character_trend->%*) {
+        push $trend_response->@*, {
+            character => $character,
+            info      => $character_trend->{info}     // [],
+            warning   => $character_trend->{warning}  // [],
+            critical  => $character_trend->{critical} // [],
         };
     }
 
