@@ -260,7 +260,7 @@ sub get_isu_list($self, $c) {
     my $jia_user_id = $self->get_user_id_from_session($c);
 
     my $isu_list = $self->dbh->select_all(
-        "SELECT * FROM `isu` WHERE `jia_user_id` = ? ORDER BY `id` DESC",
+        "SELECT `id`,`name`,`character`,`jia_isu_uuid` FROM `isu` WHERE `jia_user_id` = ? ORDER BY `id` DESC",
         $jia_user_id
     );
 
@@ -268,7 +268,7 @@ sub get_isu_list($self, $c) {
     for my $isu ($isu_list->@*) {
         my $found_last_condition = !!1;
         my $last_condition = $self->dbh->select_row(
-            "SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ? ORDER BY `timestamp` DESC LIMIT 1",
+            "SELECT `timestamp`,`is_sitting`,`condition`,`message` FROM `isu_condition` WHERE `jia_isu_uuid` = ? ORDER BY `timestamp` DESC LIMIT 1",
             $isu->{jia_isu_uuid}
         );
         if (!$last_condition) {
@@ -285,7 +285,7 @@ sub get_isu_list($self, $c) {
 
             # GetIsuConditionResponse
             $formatted_condition = {
-                jia_isu_uuid    => $last_condition->{jia_isu_uuid},
+                jia_isu_uuid    => $isu->{jia_isu_uuid},
                 isu_name        => $isu->{name},
                 timestamp       => unix_from_mysql_datetime($last_condition->{timestamp}),
                 is_sitting      => $last_condition->{is_sitting},
