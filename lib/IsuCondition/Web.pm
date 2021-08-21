@@ -384,7 +384,7 @@ sub get_isu_id($self, $c) {
     my $jia_isu_uuid = $c->args->{'jia_isu_uuid'};
 
     my $isu = $self->dbh->select_row(
-        "SELECT * FROM `isu` WHERE `jia_user_id` = ? AND `jia_isu_uuid` = ?",
+        "SELECT `id`,`jia_isu_uuid`,`name`,`character`,`jia_user_id`,`created_at`,`updated_at` FROM `isu` WHERE `jia_user_id` = ? AND `jia_isu_uuid` = ?",
         $jia_user_id, $jia_isu_uuid);
 
     if (!$isu) {
@@ -431,7 +431,7 @@ sub get_isu_graph($self, $c) {
     my $date = tm_from_unix($datetime)->strftime('%Y-%m-%d %H:00:00');
 
     my $count = $self->dbh->select_one(
-        "SELECT COUNT(*) FROM `isu` WHERE `jia_user_id` = ? AND `jia_isu_uuid` = ?",
+        "SELECT COUNT(jia_user_id) FROM `isu` WHERE `jia_user_id` = ? AND `jia_isu_uuid` = ?",
         $jia_user_id, $jia_isu_uuid);
 
     if ($count == 0) {
