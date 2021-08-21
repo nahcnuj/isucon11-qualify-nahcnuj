@@ -262,7 +262,7 @@ sub get_isu_list($self, $c) {
     my $response_list = []; # GetIsuListResponse
 
     my $last_isu_conditions = $self->dbh->select_all(q{
-            SELECT isu.id AS `id`,isu.name AS `name`,isu.character AS `character`,isu.jia_isu_uuid AS `jia_isu_uuid`,`condition`,`is_sitting`,`condition`,`timestamp` FROM `isu_condition` AS t1
+            SELECT isu.id AS `id`,isu.name AS `name`,isu.character AS `character`,isu.jia_isu_uuid AS `jia_isu_uuid`,`condition`,`is_sitting`,`condition`,`message`,`timestamp` FROM `isu_condition` AS t1
             JOIN (
                 SELECT max(`id`) as `id` FROM `isu_condition` GROUP BY `jia_isu_uuid`
             ) AS t2
@@ -278,7 +278,7 @@ sub get_isu_list($self, $c) {
             $c->halt_no_content(HTTP_INTERNAL_SERVER_ERROR);
         }
 
-        my $formatted_condition;
+        my $formatted_condition = {};
         if (defined $isu_condition->{condition}) {
             $formatted_condition = {
                 jia_isu_uuid    => $isu_condition->{jia_isu_uuid},
