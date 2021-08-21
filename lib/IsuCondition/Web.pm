@@ -733,7 +733,7 @@ sub get_trend($self, $c) {
     my $trend_response = [];
     for my $character ($character_list->@*) {
         my $isu_list = $self->dbh->select_all(
-            "SELECT * FROM `isu` WHERE `character` = ?",
+            "SELECT `id`,`jia_isu_uuid` FROM `isu` WHERE `character` = ?",
             $character->{character},
         );
 
@@ -741,7 +741,7 @@ sub get_trend($self, $c) {
 
         for my $isu ($isu_list->@*) {
             my $conditions = $self->dbh->select_all(
-                "SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ? ORDER BY timestamp DESC LIMIT 1",
+                "SELECT `condition`,`timestamp` FROM `isu_condition` WHERE `jia_isu_uuid` = ? ORDER BY timestamp DESC LIMIT 1",
                 $isu->{jia_isu_uuid},
             );
 
