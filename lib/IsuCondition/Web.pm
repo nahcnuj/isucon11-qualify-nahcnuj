@@ -152,7 +152,7 @@ sub get_user_id_from_session($self, $c) {
 }
 
 sub get_jia_service_url($self) {
-    my $config = $self->dbh->select_row("SELECT * FROM `isu_association_config` WHERE `name` = ?", "jia_service_url");
+    my $config = $self->dbh->select_row("SELECT `url` FROM `isu_association_config` WHERE `name` = ?", "jia_service_url");
     if (!$config) {
         return DEFAULT_JIA_SERVICE_URL;
     }
