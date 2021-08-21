@@ -451,7 +451,7 @@ sub generate_isu_graph_response($self, $jia_isu_uuid, $graph_date) {
     my $condition = {};
 
     my $rows = $self->dbh->select_all(
-        "SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ? ORDER BY `timestamp` ASC", $jia_isu_uuid);
+        "SELECT `condition`,`is_sitting`,`timestamp` FROM `isu_condition` WHERE `jia_isu_uuid` = ? ORDER BY `timestamp` ASC", $jia_isu_uuid);
 
     for my $condition ($rows->@*) {
         my $truncated_condition_time = tm_from_mysql_datetime($condition->{timestamp})->strftime('%Y-%m-%d %H:00:00');
