@@ -268,8 +268,9 @@ sub get_isu_list($self, $c) {
             ) AS t2
             ON t1.id = t2.id
             RIGHT JOIN `isu` ON isu.jia_isu_uuid = t1.jia_isu_uuid
+            WHERE jia_user_id = ?
             ORDER BY `timestamp` DESC
-        });
+        }, $jia_user_id);
     for my $isu_condition ($last_isu_conditions->@*) {
         my ($condition_level, $e) = calculate_condition_level($isu_condition->{condition});
         if ($e) {
