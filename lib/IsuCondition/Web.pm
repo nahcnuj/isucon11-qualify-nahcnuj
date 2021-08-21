@@ -262,7 +262,7 @@ sub get_isu_list($self, $c) {
     my $response_list = []; # GetIsuListResponse
 
     my $last_isu_conditions = $self->dbh->select_all(q{
-            SELECT isu.id AS `id`,isu.name AS `name`,isu.character AS `character`,t1.jia_isu_uuid AS `jia_isu_uuid`,`condition`,`is_sitting`,`condition`,`timestamp` FROM `isu_condition` AS t1
+            SELECT isu.id AS `id`,isu.name AS `name`,isu.character AS `character`,isu.jia_isu_uuid AS `jia_isu_uuid`,`condition`,`is_sitting`,`condition`,`timestamp` FROM `isu_condition` AS t1
             JOIN (
                 SELECT max(`id`) as `id` FROM `isu_condition` GROUP BY `jia_isu_uuid`
             ) AS t2
