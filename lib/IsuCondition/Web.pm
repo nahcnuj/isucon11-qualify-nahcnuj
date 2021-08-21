@@ -259,48 +259,42 @@ sub get_me($self, $c) {
 sub get_isu_list($self, $c) {
     my $jia_user_id = $self->get_user_id_from_session($c);
 
-    my $isu_list = $self->dbh->select_all(
-        "SELECT `id`,`name`,`character`,`jia_isu_uuid` FROM `isu` WHERE `jia_user_id` = ? ORDER BY `id` DESC",
-        $jia_user_id
-    );
-
     my $response_list = []; # GetIsuListResponse
-    for my $isu ($isu_list->@*) {
-        my $found_last_condition = !!1;
-        my $last_condition = $self->dbh->select_row(
-            "SELECT `timestamp`,`is_sitting`,`condition`,`message` FROM `isu_condition` WHERE `jia_isu_uuid` = ? ORDER BY `timestamp` DESC LIMIT 1",
-            $isu->{jia_isu_uuid}
-        );
-        if (!$last_condition) {
-            $found_last_condition = !!0;
+
+    my $last_isu_conditions = $self->dbh->select_all(q{
+            SELECT isu.id AS `id`,isu.name AS `name`,isu.character AS `character`,t1.jia_isu_uuid AS `jia_isu_uuid`,`condition`,`is_sitting`,`condition`,`timestamp` FROM `isu_condition` AS t1
+            JOIN (
+                SELECT max(`id`) as `id` FROM `isu_condition` GROUP BY `jia_isu_uuid`
+            ) AS t2
+            ON t1.id = t2.id
+            RIGHT JOIN `isu` ON isu.jia_isu_uuid = t1.jia_isu_uuid
+            ORDER BY `timestamp` DESC
+        });
+    for my $isu_condition ($last_isu_conditions->@*) {
+        my ($condition_level, $e) = calculate_condition_level($isu_condition->{condition});
+        if ($e) {
+            warnf($e);
+            $c->halt_no_content(HTTP_INTERNAL_SERVER_ERROR);
         }
 
         my $formatted_condition;
-        if ($found_last_condition) {
-            my ($condition_level, $e) = calculate_condition_level($last_condition->{condition});
-            if ($e) {
-                warnf($e);
-                $c->halt_no_content(HTTP_INTERNAL_SERVER_ERROR);
-            }
-
-            # GetIsuConditionResponse
+        if (defined $isu_condition->{condition}) {
             $formatted_condition = {
-                jia_isu_uuid    => $isu->{jia_isu_uuid},
-                isu_name        => $isu->{name},
-                timestamp       => unix_from_mysql_datetime($last_condition->{timestamp}),
-                is_sitting      => $last_condition->{is_sitting},
-                condition       => $last_condition->{condition},
+                jia_isu_uuid    => $isu_condition->{jia_isu_uuid},
+                isu_name        => $isu_condition->{name},
+                timestamp       => unix_from_mysql_datetime($isu_condition->{timestamp}),
+                is_sitting      => $isu_condition->{is_sitting},
+                condition       => $isu_condition->{condition},
                 condition_level => $condition_level,
-                message         => $last_condition->{message},
-            }
+                message         => $isu_condition->{message},
+            };
         }
 
-        # GetIsuListResponse
         my $res = {
-            id                   => $isu->{id},
-            jia_isu_uuid         => $isu->{jia_isu_uuid},
-            name                 => $isu->{name},
-            character            => $isu->{character},
+            id                   => $isu_condition->{id},
+            jia_isu_uuid         => $isu_condition->{jia_isu_uuid},
+            name                 => $isu_condition->{name},
+            character            => $isu_condition->{character},
             latest_isu_condition => $formatted_condition,
         };
         push $response_list->@* => $res;
