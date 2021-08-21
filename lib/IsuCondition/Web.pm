@@ -355,7 +355,7 @@ sub post_isu($self, $c) {
         $self->dbh->query("UPDATE `isu` SET `character` = ? WHERE  `jia_isu_uuid` = ?", $isu_from_jia->{character}, $jia_isu_uuid);
 
         $isu = $self->dbh->select_row(
-            "SELECT * FROM `isu` WHERE `jia_user_id` = ? AND `jia_isu_uuid` = ?",
+            "SELECT `id`,`jia_isu_uuid`,`name`,`character`,`jia_user_id`,`created_at`,`updated_at` FROM `isu` WHERE `jia_user_id` = ? AND `jia_isu_uuid` = ?",
             $jia_user_id, $jia_isu_uuid);
 
         $txn->commit;
@@ -655,7 +655,7 @@ sub get_isu_conditions_from_db($self, $jia_isu_uuid, $end_time, $condition_level
     my $conditions;
     if (!$start_time) {
         $conditions = $self->dbh->select_all(
-            "SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?".
+            "SELECT `condition`,`timestamp`,`is_sitting`,`message` FROM `isu_condition` WHERE `jia_isu_uuid` = ?".
                 "    AND `timestamp` < ?".
                 "    ORDER BY `timestamp` DESC",
             $jia_isu_uuid, $end_time,
@@ -663,7 +663,7 @@ sub get_isu_conditions_from_db($self, $jia_isu_uuid, $end_time, $condition_level
     }
     else {
         $conditions = $self->dbh->select_all(
-            "SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?".
+            "SELECT `condition`,`timestamp`,`is_sitting`,`message` FROM `isu_condition` WHERE `jia_isu_uuid` = ?".
                 "    AND `timestamp` < ?".
                 "    AND ? <= `timestamp`".
                 "    ORDER BY `timestamp` DESC",
@@ -682,7 +682,7 @@ sub get_isu_conditions_from_db($self, $jia_isu_uuid, $end_time, $condition_level
 
             # GetIsuConditionResponse
             push $conditions_response->@*, {
-                jia_isu_uuid    => $c->{jia_isu_uuid},
+                jia_isu_uuid    => $jia_isu_uuid,
                 isu_name        => $isu_name,
                 timestamp       => unix_from_mysql_datetime($c->{timestamp}),
                 is_sitting      => $c->{is_sitting},
