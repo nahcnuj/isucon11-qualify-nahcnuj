@@ -1,0 +1,1 @@
+CREATE INDEX `id__jia_user_id` ON isu (`id`,`jia_user_id`);
