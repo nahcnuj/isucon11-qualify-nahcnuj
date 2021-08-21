@@ -1,1 +1,1 @@
-CREATE INDEX `jia_isu_uuid__id` ON isu_condition (`jia_isu_uuid`,`id`);
+CREATE INDEX `jia_isu_uuid__id` ON isu_condition (`jia_isu_uuid`,`id` DESC);
