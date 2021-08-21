@@ -752,7 +752,7 @@ sub get_trend($self, $c) {
     }
 
     my $trend_response = [];
-    for $character (keys $character_trend->%*) {
+    for my $character (keys $character_trend->%*) {
         push $trend_response->@*, {
             character => $character,
             info      => $character_trend->{info}     // [],
